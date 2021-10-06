@@ -131,6 +131,7 @@ jobs:
           CHANGED_SERVICES=$(echo $CHANGED_SERVICES | sed 's/[][]//g' | sed 's/,/ /g')
           echo $CHANGED_SERVICES
           echo "::set-output name=changed_tests::${CHANGED_SERVICES}"
+          echo "service=$CHANGED_SERVICES" >> $GITHUB_ENV
         id: changed_services_info
       - uses: actions/download-artifact@v2
         if: ${{ needs.DevOpsUnitTestsPR.outputs.codecoverage == 'yes' }}
