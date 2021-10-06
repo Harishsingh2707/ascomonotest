@@ -23,7 +23,7 @@ jobs:
       - name: Print Changes
         run: |
           DEBUG_GIT_COMMIT=$(git log --pretty=format:'%h' -n 1)
-          DEBUG_GIT_PREVIOUS_COMMIT=$(git log --first-parent origin/main --pretty=format:'%h' -n 1 --skip 1)
+          DEBUG_GIT_PREVIOUS_COMMIT=$(git log --first-parent origin/master --pretty=format:'%h' -n 1 --skip 1)
           echo $DEBUG_GIT_COMMIT
           echo $DEBUG_GIT_PREVIOUS_COMMIT
           DEBUG_FOLDERS=$(git diff --name-only ${DEBUG_GIT_COMMIT} ${DEBUG_GIT_PREVIOUS_COMMIT} | sort -u | cut -d '/' -f 1,2 | uniq)
