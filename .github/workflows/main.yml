@@ -143,6 +143,7 @@ jobs:
         id: git_info
       - name: pass the variable value
         run: |
+          watch_files=${1}
           service=$(echo ${watch_files} | cut -d '.' -f 2 | cut -d '/' -f 3)
           echo "service=$service" >> $GITHUB_ENV
           echo $service
