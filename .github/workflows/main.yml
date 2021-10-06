@@ -154,7 +154,7 @@ jobs:
         with:
           args: >
             -Dsonar.organization=harishsingh2707
-            -Dsonar.projectKey=siba2
+            -Dsonar.projectKey=${{ env.service }}
            #-Dsonar.projectVersion=${{ steps.git_info.outputs.project_version }}
            #-Dsonar.sourceEncoding=UTF-8
            #-Dsonar.sources=functions/${{ matrix.service }}
