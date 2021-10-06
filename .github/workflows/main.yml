@@ -141,6 +141,10 @@ jobs:
         run: |
           echo ::set-output name=project_version::${GITHUB_SHA}
         id: git_info
+      - name: pass the variable value
+        run: |
+          service=$(echo ${watch_files} | cut -d '.' -f 2 | cut -d '/' -f 3)
+          echo "service=$service" >> $GITHUB_ENV
       - name: SonarCloud Scan
         if: ${{ needs.unitTestsMain.outputs.runservicescan == 'yes' }}
         uses: SonarSource/sonarcloud-github-action@master
