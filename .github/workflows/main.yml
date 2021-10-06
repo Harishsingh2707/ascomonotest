@@ -141,19 +141,19 @@ jobs:
         run: |
           echo ::set-output name=project_version::${GITHUB_SHA}
         id: git_info
-      - name: pass the variable value
-        run: |
-          watch_files=${1}
-          service=$(echo ${watch_files} | cut -d '.' -f 2 | cut -d '/' -f 3)
-          echo "service=$service" >> $GITHUB_ENV
-          echo $service
+#       - name: pass the variable value
+#         run: |
+#           watch_files=${1}
+#           service=$(echo ${watch_files} | cut -d '.' -f 2 | cut -d '/' -f 3)
+#           echo "service=$service" >> $GITHUB_ENV
+#           echo $service
       - name: SonarCloud Scan
         if: ${{ needs.unitTestsMain.outputs.runservicescan == 'yes' }}
         uses: SonarSource/sonarcloud-github-action@master
         with:
           args: >
             -Dsonar.organization=harishsingh2707
-            -Dsonar.projectKey=${{ env.service }}
+            -Dsonar.projectKey=siba2
            #-Dsonar.projectVersion=${{ steps.git_info.outputs.project_version }}
            #-Dsonar.sourceEncoding=UTF-8
            #-Dsonar.sources=functions/${{ matrix.service }}
