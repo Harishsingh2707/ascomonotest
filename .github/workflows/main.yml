@@ -43,6 +43,7 @@ jobs:
               echo "$file"
               ./detectGitChanges.sh $file
             done
+            cat $GITHUB_ENV
           CHANGED_SERVICES=$(cat invoke.list)
           cd ..
           echo Installing Coverage
