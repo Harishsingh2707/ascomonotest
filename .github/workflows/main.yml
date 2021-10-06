@@ -145,6 +145,7 @@ jobs:
         run: |
           service=$(echo ${watch_files} | cut -d '.' -f 2 | cut -d '/' -f 3)
           echo "service=$service" >> $GITHUB_ENV
+          echo $service
       - name: SonarCloud Scan
         if: ${{ needs.unitTestsMain.outputs.runservicescan == 'yes' }}
         uses: SonarSource/sonarcloud-github-action@master
