@@ -19,7 +19,7 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - run: git fetch origin main
+      - run: git fetch origin master
       - name: Print Changes
         run: |
           DEBUG_GIT_COMMIT=$(git log --pretty=format:'%h' -n 1)
