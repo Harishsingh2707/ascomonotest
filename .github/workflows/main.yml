@@ -1,0 +1,158 @@
+name: SonarMain
+on:
+  push:
+    branches:
+      - "*"
+  workflow_dispatch:
+jobs:
+  unitTestsMain:
+    name: UnitTestsMain
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: git fetch origin main
+      - name: Print Changes
+        run: |
+          DEBUG_GIT_COMMIT=$(git log --pretty=format:'%h' -n 1)
+          DEBUG_GIT_PREVIOUS_COMMIT=$(git log --first-parent origin/main --pretty=format:'%h' -n 1 --skip 1)
+          echo $DEBUG_GIT_COMMIT
+          echo $DEBUG_GIT_PREVIOUS_COMMIT
+          DEBUG_FOLDERS=$(git diff --name-only ${DEBUG_GIT_COMMIT} ${DEBUG_GIT_PREVIOUS_COMMIT} | sort -u | cut -d '/' -f 1,2 | uniq)
+          echo $DEBUG_FOLDERS
+          projectname=`git show --format="" --name-only | xargs dirname | sort | uniq`
+          echo "projectname=$projectname" >> $GITHUB_ENV
+          
+      - name: Run Unit Tests
+        run: |
+          echo "Create Coverage Directory"
+          sudo mkdir coverage
+          cd scripts
+          sudo chmod +x detectGitChanges.sh
+         
+          for file in $(find . -type f -name "*.watch");
+            do
+              echo "$file"
+              ./detectGitChanges.sh $file
+            done
+          CHANGED_SERVICES=$(cat invoke.list)
+          cd ..
+          echo Installing Coverage
+          pip install coverage html-testRunner
+          for service in $CHANGED_SERVICES;
+            do
+              if [ -d $GITHUB_WORKSPACE/functions/$service ]; then
+                echo Running Unit Test for $service
+                cd $GITHUB_WORKSPACE/functions/$service
+                UNIT_TEST_PATHS=$(find * -name *_test.py -exec dirname {} \;)
+                echo $UNIT_TEST_PATHS
+                for path in $UNIT_TEST_PATHS;
+                  do
+                    cd $path
+                    echo "finding unit tests in $path"
+                    UNIT_TEST_FILES=$(find * -name "*_test.py")
+                    echo $UNIT_TEST_FILES
+                    for unit_file in $UNIT_TEST_FILES;
+                      do
+                        pip install -r requirements.txt
+                        coverage run -m unittest $unit_file
+                      done
+                    cd ../
+                  done
+                if [ ! -z "${UNIT_TEST_PATHS}" ];then
+                  echo "Combining Unit Test Results"
+                  COVERAGE_RESULTS=$(find * -name .coverage)
+                  echo $COVERAGE_RESULTS
+                  coverage combine $COVERAGE_RESULTS
+                  echo "Generating Coverage XML"
+                  coverage xml -i
+                  ls -l
+                  pwd
+                  echo "Copying to Coverage Directory"
+                  mkdir $GITHUB_WORKSPACE/coverage/$service
+                  cp $GITHUB_WORKSPACE/functions/$service/coverage.xml $GITHUB_WORKSPACE/coverage/$service/coverage.xml
+                  echo "code_coverage=yes" >> $GITHUB_ENV
+                  echo "::set-output name=code_coverage::yes"
+                fi
+              else
+                echo "No functions for $service"
+              fi
+            done
+          echo "Remove appsyncapi and cloudformation from CHANGED_SERVICES"
+          CHANGED_SERVICES=$(echo $CHANGED_SERVICES | sed 's/appsyncapi//g' | sed 's/cloudformation//g')
+          if [ -z "${CHANGED_SERVICES}" ];then
+            SERVICE=$(echo none | jq -R -c 'split(" ")')
+            echo "service is no"
+            echo "::set-output name=service_tests::${SERVICE}"
+            echo "::set-output name=run_service_scan::no"
+          else
+            SERVICE=$(echo $CHANGED_SERVICES | jq -R -c 'split(" ")')
+            echo "$SERVICE"
+            echo "service is yes"
+            echo "::set-output name=service_tests::${SERVICE}"
+            echo "::set-output name=run_service_scan::yes"
+          fi
+        id: services_info
+      - run: echo "$code_coverage"
+      - uses: actions/upload-artifact@v2
+        if: ${{ env.code_coverage == 'yes' }}
+        with:
+          name: coverageReports
+          path: coverage
+    outputs:
+      changedservices: ${{ steps.services_info.outputs.service_tests}}
+      runservicescan: ${{ steps.services_info.outputs.run_service_scan}}
+      codecoverage: ${{ steps.services_info.outputs.code_coverage}}
+
+  scanServiceMain:
+    name: scanServiceMain
+    needs: unitTestsMain
+    runs-on: ubuntu-latest
+    if: ${{ needs.unitTestsMain.outputs.runservicescan == 'yes' }}
+    strategy:
+      matrix:
+        service: ${{ fromJson(needs.unitTestsMain.outputs.changedservices) }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set Changed Services
+        run: |
+          CHANGED_SERVICES=${{ needs.unitTestsMain.outputs.changedservices }}
+          CHANGED_SERVICES=$(echo $CHANGED_SERVICES | sed 's/[][]//g' | sed 's/,/ /g')
+          echo $CHANGED_SERVICES
+          echo "::set-output name=changed_tests::${CHANGED_SERVICES}"
+        id: changed_services_info
+      - uses: actions/download-artifact@v2
+        if: ${{ needs.DevOpsUnitTestsPR.outputs.codecoverage == 'yes' }}
+        with:
+          name: coverageReports
+          path: coverage
+      - name: Set Project Version
+        if: ${{ needs.unitTestsMain.outputs.runservicescan == 'yes' }}
+        run: |
+          echo ::set-output name=project_version::${GITHUB_SHA}
+        id: git_info
+      - name: SonarCloud Scan
+        if: ${{ needs.unitTestsMain.outputs.runservicescan == 'yes' }}
+        uses: SonarSource/sonarcloud-github-action@master
+        with:
+          args: >
+            -Dsonar.organization=harishsingh2707
+            -Dsonar.projectKey=${{ env.service }}
+           #-Dsonar.projectVersion=${{ steps.git_info.outputs.project_version }}
+           #-Dsonar.sourceEncoding=UTF-8
+           #-Dsonar.sources=functions/${{ matrix.service }}
+           #-Dsonar.exclusions=**/*_test.py
+           #-Dsonar.python.coverage.reportPaths=coverage/${{ matrix.service }}/coverage.xml
+        env:
+          GITHUB_TOKEN: "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"
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
