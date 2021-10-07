@@ -156,7 +156,7 @@ jobs:
           projectBaseDir: functions/${{ env.service }}/
           args: >
             -Dsonar.organization=harishsingh2707
-            -Dsonar.projectKey=harishsingh2707.function.${{ env.service }}
+            -Dsonar.projectKey=Harishsingh2707.function.${{ env.service }}
            #-Dsonar.branch.name="main"
            #-Dsonar.branch.target="main"
            #-Dsonar.projectVersion=${{ steps.git_info.outputs.project_version }}
