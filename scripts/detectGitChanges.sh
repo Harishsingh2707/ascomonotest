@@ -12,7 +12,7 @@ trigger_deploy="false"
 
 detect_changed_folders() {
   GIT_COMMIT=$(git log --pretty=format:'%h' -n 1)
-  GIT_PREVIOUS_COMMIT=$(git log --first-parent origin/main --pretty=format:'%h' -n 1 --skip 1)
+  GIT_PREVIOUS_COMMIT=$(git log --first-parent origin/master --pretty=format:'%h' -n 1 --skip 1)
   # echo $GIT_COMMIT
   # echo $GIT_PREVIOUS_COMMIT
   folders=$(git diff --name-only ${GIT_COMMIT} ${GIT_PREVIOUS_COMMIT} | sort -u | cut -d '/' -f 1,2 | uniq)
