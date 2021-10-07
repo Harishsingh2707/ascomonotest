@@ -156,8 +156,8 @@ jobs:
           args: >
             -Dsonar.organization=harishsingh2707
             -Dsonar.projectKey=${{ env.service }}
-            #-Dsonar.branch.name="main"
-            #-Dsonar.branch.target="main"
+           #-Dsonar.branch.name="main"
+           #-Dsonar.branch.target="main"
            #-Dsonar.projectVersion=${{ steps.git_info.outputs.project_version }}
            #-Dsonar.sourceEncoding=UTF-8
            #-Dsonar.sources=functions/${{ matrix.service }}
