@@ -153,6 +153,7 @@ jobs:
         if: ${{ needs.unitTestsMain.outputs.runservicescan == 'yes' }}
         uses: SonarSource/sonarcloud-github-action@master
         with:
+          projectBaseDir: ${{ env.service }}
           args: >
             -Dsonar.organization=harishsingh2707
             -Dsonar.projectKey=${{ env.service }}
